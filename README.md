@@ -2,6 +2,8 @@
 
 Sticky notes that expire on their own, and voice notes transcribed on your computer. No API key, nothing uploaded.
 
+**[Try it live](https://adrienbalcioglu.github.io/local-notetaker/)**
+
 ## Features
 
 - Sticky notes that disappear after 1 hour, tonight, 24 hours or 7 days, unless you keep them
