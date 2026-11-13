@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Local Notetaker</title>
+<style>:root{--bg:#f7f7f5;--panel:#fff;--ink:#1c1c1a;--muted:#6b6b66;--line:#e3e3de;--accent:#3d5afe;--accent-ink:#fff;--good:#1a7f4b;--bad:#b3261e;--warn:#9a6700;--soft:#eef0ff;--radius:10px;--mono:ui-monospace,SFMono-Regular,Menlo,monospace}
+@media (prefers-color-scheme:dark){:root{--bg:#141413;--panel:#1d1d1b;--ink:#ececE6;--muted:#9a9a93;--line:#30302c;--accent:#8c9eff;--accent-ink:#11122b;--good:#5fd39a;--bad:#ff8a80;--warn:#e3b341;--soft:#23264a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1080px;margin:0 auto;padding:28px 16px 64px}
+header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+h1{font-size:24px;margin:0;letter-spacing:-.01em}
+h2{font-size:15px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+p.lead{margin:4px 0 0;color:var(--muted);max-width:62ch}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.grid{display:grid;gap:16px}
+@media(min-width:820px){.cols-2{grid-template-columns:1fr 1fr}.cols-3{grid-template-columns:repeat(3,1fr)}.side{grid-template-columns:340px 1fr}}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+textarea{min-height:120px;resize:vertical}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.field{margin-bottom:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button{font:inherit;font-weight:600;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 14px}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button.ghost{border-color:transparent;color:var(--muted);padding:4px 8px}
+button:disabled{opacity:.5;cursor:not-allowed}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td input{padding:5px 7px}
+.scroll{overflow-x:auto}
+.stat{font-size:28px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stat small{display:block;font-size:12px;font-weight:500;color:var(--muted);letter-spacing:0}
+.muted{color:var(--muted)}.good{color:var(--good)}.bad{color:var(--bad)}.warn{color:var(--warn)}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--soft);color:var(--accent)}
+.out{white-space:pre-wrap;word-wrap:break-word;font-size:14.5px;min-height:120px}
+.out.mono,code{font-family:var(--mono);font-size:13px}
+.note{font-size:13px;color:var(--muted)}
+footer{margin-top:28px;font-size:13px;color:var(--muted)}
+footer a{color:inherit}
+
+.wall{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.note-card{border-radius:6px;padding:12px;min-height:170px;display:flex;flex-direction:column;box-shadow:0 2px 6px rgba(0,0,0,.12);color:#2b2a22}
+.c0{background:#fff3a6}.c1{background:#ffd3b6}.c2{background:#c9f0d3}.c3{background:#cfe3ff}.c4{background:#ecd3ff}
+.note-card textarea{flex:1;min-height:90px;background:transparent;border:0;resize:none;color:inherit;padding:0;font-size:15px}
+.note-card textarea:focus{outline:0}
+.note-card .meta{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:12px;margin-top:8px;color:#5c5a48}
+.note-card select{width:auto;font-size:12px;padding:2px 4px;background:rgba(255,255,255,.5);color:inherit;border-color:rgba(0,0,0,.15)}
+.note-card button{background:transparent;border:0;color:inherit;padding:2px 6px}
+.note-card.soon .left{font-weight:700;color:#a3341f}
+.voice{font-size:11px;text-transform:uppercase;letter-spacing:.06em;opacity:.7}
+#record.on{background:var(--bad);border-color:var(--bad);color:#fff}
+</style>
+</head>
+<body>
+<main>
+  <header class="top">
+    <div>
+      <h1>Local Notetaker</h1>
+      <p class="lead">Sticky notes that clean up after themselves, and voice notes transcribed on your computer. Nothing is uploaded.</p>
+    </div>
+    <div class="row">
+      <button id="add" class="primary">New note</button>
+      <button id="record">● Record a voice note</button>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="grid cols-3">
+      <div><label for="defaultTtl">New notes disappear</label><select id="defaultTtl"></select></div>
+      <div><label for="voiceModel">Speech model</label><select id="voiceModel"></select></div>
+      <div><label for="voiceLang">Spoken language</label><select id="voiceLang"></select></div>
+    </div>
+    <p id="status" class="note" role="status" style="margin:10px 0 0"></p>
+  </section>
+
+  <div class="wall" id="wall"></div>
+  <p id="empty" class="note" hidden>No notes. Write one, or record one.</p>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>How it works</h2>
+    <p class="note" style="margin:0">Notes live in this browser only. A note past its time is deleted the next time the page is open; choose "Keep" for the ones that matter. Voice notes are transcribed by a speech model that runs on this device: the model is downloaded once, your audio never leaves the computer, and the recording itself is not stored, only the text.</p>
+  </section>
+  <footer>MIT license · © 2026 Adrien Balcioglu · Runs entirely in your browser: no account, no API key, no server.</footer>
+</main>
+<script>
+// Local speech-to-text: Whisper runs in a Web Worker in this browser (WebAssembly).
+// The audio is never uploaded. Only the model files are downloaded, once, then cached.
+const WHISPER_MODELS = {
+  "onnx-community/whisper-tiny": "Fast · 41 MB download",
+  "onnx-community/whisper-base": "Balanced · 77 MB download",
+  "onnx-community/whisper-small": "Most accurate · 249 MB download",
+};
+const WHISPER_LANGUAGES = { "": "Detect language", french: "French", english: "English", spanish: "Spanish", german: "German", italian: "Italian", portuguese: "Portuguese" };
+
+const WORKER_SOURCE = `
+import { pipeline } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.2";
+let transcriber = null, loadedModel = null;
+self.onmessage = async (event) => {
+  const { id, audio, model, language } = event.data;
+  try {
+    if (loadedModel !== model) {
+      transcriber = await pipeline("automatic-speech-recognition", model, {
+        dtype: "q8",
+        progress_callback: (p) => { if (p.status === "progress") self.postMessage({ id, type: "progress", file: p.file, loaded: p.loaded, total: p.total }); },
+      });
+      loadedModel = model;
+    }
+    self.postMessage({ id, type: "status", text: "Transcribing on this device…" });
+    const options = { chunk_length_s: 30, stride_length_s: 5 };
+    if (language) { options.language = language; options.task = "transcribe"; }
+    const output = await transcriber(audio, options);
+    self.postMessage({ id, type: "done", text: (output.text || "").trim() });
+  } catch (error) {
+    self.postMessage({ id, type: "error", message: String(error && error.message ? error.message : error) });
+  }
+};`;
+
+let whisperWorker = null, jobId = 0;
+function getWorker() {
+  if (!whisperWorker) whisperWorker = new Worker(URL.createObjectURL(new Blob([WORKER_SOURCE], { type: "text/javascript" })), { type: "module" });
+  return whisperWorker;
+}
+
+/** Transcribes 16 kHz mono samples. onStatus receives short progress messages. */
+function transcribe(samples, { model, language, onStatus }) {
+  return new Promise((resolve, reject) => {
+    const worker = getWorker(), id = ++jobId, files = {};
+    const listener = (event) => {
+      const m = event.data; if (m.id !== id) return;
+      if (m.type === "progress") {
+        files[m.file] = [m.loaded || 0, m.total || 0];
+        const loaded = Object.values(files).reduce((s, f) => s + f[0], 0), total = Object.values(files).reduce((s, f) => s + f[1], 0);
+        onStatus?.(`Downloading the speech model, once: ${(loaded / 1e6).toFixed(0)} of ${(total / 1e6).toFixed(0)} MB`);
+      } else if (m.type === "status") onStatus?.(m.text);
+      else { worker.removeEventListener("message", listener); m.type === "done" ? resolve(m.text) : reject(new Error(m.message)); }
+    };
+    worker.addEventListener("message", listener);
+    worker.addEventListener("error", (e) => reject(new Error(e.message || "The speech engine could not start.")), { once: true });
+    onStatus?.("Starting the speech engine…");
+    worker.postMessage({ id, audio: samples, model, language }, [samples.buffer]);
+  });
+}
+
+/** Decodes any audio blob the browser can read into 16 kHz mono samples. */
+async function toSamples(blob) {
+  const context = new AudioContext({ sampleRate: 16000 });
+  try {
+    const buffer = await context.decodeAudioData(await blob.arrayBuffer());
+    const mono = new Float32Array(buffer.length);
+    for (let c = 0; c < buffer.numberOfChannels; c++) {
+      const data = buffer.getChannelData(c);
+      for (let i = 0; i < data.length; i++) mono[i] += data[i] / buffer.numberOfChannels;
+    }
+    return mono;
+  } finally { context.close(); }
+}
+
+/** Microphone recorder. start() asks for permission; stop() resolves with the recorded blob. */
+function createRecorder() {
+  let recorder = null, stream = null, chunks = [];
+  return {
+    get active() { return !!recorder; },
+    async start() {
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error("This browser cannot record audio here. Open the page over https or from localhost.");
+      try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+      catch { throw new Error("Microphone access was refused. Allow it in the browser to record."); }
+      chunks = []; recorder = new MediaRecorder(stream);
+      recorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+      recorder.start(1000);
+    },
+    stop() {
+      return new Promise((resolve) => {
+        if (!recorder) return resolve(null);
+        recorder.onstop = () => {
+          const blob = new Blob(chunks, { type: recorder.mimeType });
+          stream.getTracks().forEach((t) => t.stop());
+          recorder = null; stream = null; resolve(blob);
+        };
+        recorder.stop();
+      });
+    },
+  };
+}
+
+function fillSelect(select, entries, value) {
+  select.innerHTML = "";
+  for (const [v, label] of Object.entries(entries)) { const o = document.createElement("option"); o.value = v; o.textContent = label; select.append(o); }
+  if (value !== undefined) select.value = value;
+}
+
+const KEY = 'local-notetaker-v1';
+const TTL = { '3600000': 'in 1 hour', tonight: 'tonight', '86400000': 'in 24 hours', '604800000': 'in 7 days', keep: 'never (keep)' };
+const $ = (id) => document.getElementById(id);
+let state = load();
+function load() {
+  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && Array.isArray(s.notes)) return s; } catch {}
+  return { defaultTtl: '86400000', model: 'onnx-community/whisper-base', lang: '', notes: [] };
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+
+function expiry(ttl, from = Date.now()) {
+  if (ttl === 'keep') return null;
+  if (ttl === 'tonight') { const d = new Date(from); d.setHours(23, 59, 59, 0); return d.getTime(); }
+  return from + Number(ttl);
+}
+function left(note) {
+  if (note.expires === null) return 'kept';
+  const ms = note.expires - Date.now();
+  if (ms < 60000) return 'under a minute left';
+  const min = Math.round(ms / 60000);
+  if (min < 60) return `${min} min left`;
+  const h = Math.round(min / 60);
+  return h < 48 ? `${h} h left` : `${Math.round(h / 24)} days left`;
+}
+function purge() {
+  const before = state.notes.length;
+  state.notes = state.notes.filter((n) => n.expires === null || n.expires > Date.now());
+  if (state.notes.length !== before) save();
+  return before - state.notes.length;
+}
+
+function render() {
+  const wall = $('wall'); wall.innerHTML = '';
+  for (const note of state.notes) {
+    const card = document.createElement('article');
+    card.className = `note-card c${note.color}` + (note.expires !== null && note.expires - Date.now() < 3600000 ? ' soon' : '');
+    card.dataset.id = note.id;
+    if (note.voice) { const tag = document.createElement('div'); tag.className = 'voice'; tag.textContent = 'Voice note'; card.append(tag); }
+    const text = document.createElement('textarea'); text.value = note.text; text.placeholder = 'Write here…'; text.setAttribute('aria-label', 'Note');
+    const meta = document.createElement('div'); meta.className = 'meta';
+    const remaining = document.createElement('span'); remaining.className = 'left'; remaining.textContent = left(note);
+    const ttl = document.createElement('select'); ttl.setAttribute('aria-label', 'When this note disappears');
+    ttl.innerHTML = '<option value="">change…</option>' + Object.entries(TTL).map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+    const tools = document.createElement('span');
+    const copy = document.createElement('button'); copy.textContent = 'Copy'; copy.dataset.act = 'copy';
+    const del = document.createElement('button'); del.textContent = '✕'; del.dataset.act = 'del'; del.setAttribute('aria-label', 'Delete note');
+    tools.append(copy, del); meta.append(remaining, ttl, tools); card.append(text, meta); wall.append(card);
+  }
+  $('empty').hidden = state.notes.length > 0;
+}
+const find = (el) => state.notes.find((n) => n.id === Number(el.closest('.note-card').dataset.id));
+
+function addNote(text, voice = false) {
+  const note = { id: Date.now() + Math.floor(Math.random() * 1000), text, voice, color: Math.floor(Math.random() * 5), created: Date.now(), expires: expiry(state.defaultTtl) };
+  state.notes.unshift(note); save(); render();
+  if (!voice) $('wall').querySelector('textarea')?.focus();
+}
+
+$('wall').addEventListener('input', (e) => { if (e.target.tagName === 'TEXTAREA') { find(e.target).text = e.target.value; save(); } });
+$('wall').addEventListener('change', (e) => {
+  if (e.target.tagName !== 'SELECT' || !e.target.value) return;
+  find(e.target).expires = expiry(e.target.value); save(); render();
+});
+$('wall').addEventListener('click', async (e) => {
+  const act = e.target.dataset.act; if (!act) return;
+  const note = find(e.target);
+  if (act === 'del') { state.notes = state.notes.filter((n) => n !== note); save(); render(); }
+  if (act === 'copy') { try { await navigator.clipboard.writeText(note.text); e.target.textContent = 'Copied'; setTimeout(() => { e.target.textContent = 'Copy'; }, 1200); } catch { $('status').textContent = 'The clipboard is not available here.'; } }
+});
+$('add').addEventListener('click', () => addNote(''));
+
+fillSelect($('defaultTtl'), TTL, state.defaultTtl);
+fillSelect($('voiceModel'), WHISPER_MODELS, state.model);
+fillSelect($('voiceLang'), WHISPER_LANGUAGES, state.lang);
+$('defaultTtl').addEventListener('change', (e) => { state.defaultTtl = e.target.value; save(); });
+$('voiceModel').addEventListener('change', (e) => { state.model = e.target.value; save(); });
+$('voiceLang').addEventListener('change', (e) => { state.lang = e.target.value; save(); });
+
+const recorder = createRecorder();
+let startedAt = 0, ticker = null;
+$('record').addEventListener('click', async () => {
+  const button = $('record'), status = $('status');
+  if (!recorder.active) {
+    try { await recorder.start(); } catch (error) { status.textContent = error.message; return; }
+    startedAt = Date.now(); button.classList.add('on');
+    const tick = () => { const s = Math.floor((Date.now() - startedAt) / 1000); button.textContent = `■ Stop (${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')})`; };
+    tick(); ticker = setInterval(tick, 500); status.textContent = 'Recording…';
+    return;
+  }
+  clearInterval(ticker); button.classList.remove('on'); button.textContent = '● Record a voice note'; button.disabled = true;
+  try {
+    const blob = await recorder.stop();
+    const text = await transcribe(await toSamples(blob), { model: state.model, language: state.lang, onStatus: (m) => { status.textContent = m; } });
+    if (text) { addNote(text, true); status.textContent = 'Voice note added.'; } else status.textContent = 'Nothing was heard in that recording.';
+  } catch (error) { status.textContent = 'Transcription failed: ' + error.message; }
+  finally { button.disabled = false; }
+});
+
+const removed = purge();
+render();
+if (removed) $('status').textContent = `${removed} expired note${removed > 1 ? 's were' : ' was'} cleared.`;
+setInterval(() => { if (document.activeElement?.tagName === 'TEXTAREA') return; purge(); render(); }, 60000);
+</script>
+</body>
+</html>
