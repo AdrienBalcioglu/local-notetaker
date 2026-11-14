@@ -2,7 +2,7 @@
 
 Sticky notes that expire on their own, and voice notes transcribed on your computer. No API key, nothing uploaded.
 
-**[Try it live](https://adrienbalcioglu.github.io/local-notetaker/)**
+**[Website](https://adrienbalcioglu.github.io/local-notetaker/about.html)** · **[Open the app](https://adrienbalcioglu.github.io/local-notetaker/)**
 
 ## Features
 
